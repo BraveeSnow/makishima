@@ -12,6 +12,9 @@ class Testing(commands.Cog):
 
     @discord.app_commands.command()
     async def ping(self, interaction: discord.Interaction):
+        """
+        Tests if Makishima properly replies.
+        """
         try:
             await interaction.response.send_message("Pong!")
         except discord.HTTPException as err:
