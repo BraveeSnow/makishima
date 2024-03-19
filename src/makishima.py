@@ -17,7 +17,7 @@ async def load_commands(command_path: os.PathLike):
         name: str = entry.name
 
         if entry.is_dir():
-            await load_commands(os.path.join(command_path, name))
+            await load_commands(Path(os.path.join(command_path, name)))
             continue
 
         if not name.endswith(".py"):
@@ -25,7 +25,7 @@ async def load_commands(command_path: os.PathLike):
 
         # continue with command import
         print(f"Loading commands from {name}")
-        await makishima.load_extension(f"commands.{Path(command_path).name.replace("/", ".")}.{name[:-3]}")
+        await makishima.load_extension(f"commands.{Path(command_path).name.replace('/', '.')}.{name[:-3]}")
 
 @makishima.event
 async def on_ready():
@@ -33,7 +33,7 @@ async def on_ready():
     await makishima.change_presence(activity=activity, status=discord.Status.do_not_disturb)
 
     # load commands
-    await load_commands("src/commands")
+    await load_commands(Path("src/commands"))
 
     for guild in makishima.guilds:
         print(f"Synced commands in guild with ID {guild.id}")
