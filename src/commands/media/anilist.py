@@ -1,7 +1,19 @@
 from typing import List
 import discord
 from discord.ext import commands
-from api.anilist import AnilistEntry, AnilistGraphQLClient
+from api.anilist import AnilistEntry, AnilistGraphQLClient, ExternalLink
+
+
+class ExternalLinkView(discord.ui.View):
+    def __init__(self, external_links: List[ExternalLink]):
+        super().__init__(timeout=None)
+
+        for source in external_links:
+            self.add_item(
+                discord.ui.Button(
+                    style=discord.ButtonStyle.url, label=source.name, url=source.url
+                )
+            )
 
 
 class AnilistResultSelection(discord.ui.Select):
@@ -23,6 +35,10 @@ class AnilistResultSelection(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         selected = self.results[int(self.values[0])]
+        await interaction.response.edit_message(
+            content=f'Selected "{selected.english if selected.english is not None else selected.romaji}"',
+            view=None,
+        )
 
         embed = discord.Embed(
             title=selected.english if selected.english is not None else selected.romaji,
@@ -33,7 +49,11 @@ class AnilistResultSelection(discord.ui.Select):
         embed.set_author(name=selected.native)
         embed.set_thumbnail(url=selected.cover_image)
 
-        embed.add_field(name="Genres", value=", ".join(selected.genres))
+        embed.add_field(
+            name="Genres",
+            value=", ".join(selected.genres) if len(selected.genres) > 0 else "N/A",
+            inline=False,
+        )
         embed.add_field(
             name="Average Score",
             value=(
@@ -41,26 +61,28 @@ class AnilistResultSelection(discord.ui.Select):
             ),
         )
         embed.add_field(
+            name="Episodes",
+            value=(
+                f"{selected.episodes} ({selected.format})"
+                if selected.episodes is not None and selected.format is not None
+                else "N/A"
+            ),
+        )
+        embed.add_field(
             name="Season",
             value=(
                 f"{selected.season} {selected.release}"
                 if selected.season is not None and selected.release is not None
-                else "Not yet released"
-            ),
-        )
-        embed.add_field(
-            name="Average Duration",
-            value=(
-                f"{selected.duration} minutes"
-                if selected.duration is not None
-                else "Unknown duration"
+                else "N/A"
             ),
         )
 
         embed.set_image(url=selected.banner_image)
         embed.set_footer(text="Provided by AniList")
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(
+            embed=embed, view=ExternalLinkView(selected.external_links)
+        )
 
 
 class AnilistResultView(discord.ui.View):

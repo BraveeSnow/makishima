@@ -16,17 +16,21 @@ _ANILIST_SEARCH_QUERY = gql(
 			        romaji
 			        native
 		        }
+                format
                 description
                 season
                 seasonYear
                 episodes
-                duration
                 coverImage {
                     medium
                 }
                 bannerImage
                 genres
                 averageScore
+                externalLinks {
+				    url
+					site
+				}
 	        }
 	    }
     }
@@ -34,6 +38,12 @@ _ANILIST_SEARCH_QUERY = gql(
 )
 
 _HTML_RE = re.compile(r"<[^>]+>")
+
+
+class ExternalLink:
+    def __init__(self, external_link: Dict[str, Any]):
+        self.url: str | None = external_link["url"]
+        self.name: str = external_link["site"]
 
 
 class AnilistEntry:
@@ -46,6 +56,7 @@ class AnilistEntry:
         self.english: str | None = media["title"]["english"]
         self.native: str = media["title"]["native"]
         self.romaji: str = media["title"]["romaji"]
+        self.format: str = media["format"].replace("_", " ")
         self.description: str = _HTML_RE.sub("", media["description"])
         self.season: str | None = (
             media["season"].capitalize() if media["season"] is not None else None
@@ -56,9 +67,6 @@ class AnilistEntry:
         self.episodes: int | None = (
             int(float(media["episodes"])) if media["episodes"] is not None else None
         )
-        self.duration: int | None = (
-            int(float(media["duration"])) if media["duration"] is not None else None
-        )
         self.cover_image: str = media["coverImage"]["medium"]
         self.banner_image: str = media["bannerImage"]
         self.genres: List[str] = media["genres"]
@@ -67,6 +75,9 @@ class AnilistEntry:
             if media["averageScore"] is not None
             else None
         )
+        self.external_links: List[ExternalLink] = [
+            ExternalLink(l) for l in media["externalLinks"]
+        ]
 
 
 def clean_anilist_entries(entries: Dict[str, Any]) -> List[AnilistEntry]:
