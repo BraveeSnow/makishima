@@ -1,16 +1,20 @@
 # Makishima
 
 Planned features:
-- [ ] AniList/Goodreads integration
+- [ ] AniList
+    - [x] Search
     - [ ] Recommendations
-    - [ ] Random based on preferences, planning, etc.
     - [ ] Rate function
     - [ ] Watched/read up to chapter X
     - [ ] Change status
     - [ ] Profile overview/stats
-    - [ ] AWC tracking
-- [ ] Helldivers integration
-    - [ ] Current major order
+    - [ ] Random based on preferences, planning, etc.
+    - [ ] AWC tracking (?)
+- [ ] Google Books (?)
+- [ ] Time/Planning
+    - [ ] Timestamps
+    - [ ] Reminders
+    - [ ] Calendar
 
 ## Running
 
