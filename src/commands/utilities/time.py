@@ -5,6 +5,9 @@ from discord.ext import commands
 
 
 class Time(commands.Cog):
+    """
+    Time utilities for planning events.
+    """
     def __init__(self, client: commands.Bot):
         self.client = client
         self.time_pattern = re.compile(r"\d{1,2}:\d{2}")
@@ -14,6 +17,9 @@ class Time(commands.Cog):
         user_time="A relative time formatted as HH:MM, +HH:MM or -HH:MM."
     )
     async def time(self, interaction: discord.Interaction, user_time: str):
+        """
+        Sends a timestamp given the relative offset.
+        """
         re_match = self.time_pattern.search(user_time)
 
         if re_match is None:
