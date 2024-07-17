@@ -25,6 +25,8 @@ file.
 - `MAKISHIMA_TOKEN`
     - The Discord bot token that can be retrieved in the Discord developer
       portal.
+- `BIBLE_DB`
+    - The sqlite database URL to be used for the bible command group.
 
 You can then run makishima by typing `python3 src/makishima.py` in your
 terminal. This script also contains a shebang, so you can also run it like an
