@@ -78,10 +78,10 @@ BOOKS = {
 
 async def _book_autocomplete(_: discord.Interaction, content: str) -> List[Choice[str]]:
     return [
-        Choice(name=k, value=v)
-        for k, v in BOOKS.items()
+        Choice(name=k, value=k)
+        for k in BOOKS.keys()
         if k.lower().startswith(content.lower())
-    ]
+    ][:25]
 
 
 class Bible(commands.Cog):
@@ -116,7 +116,7 @@ class Bible(commands.Cog):
             f"SELECT text FROM verse WHERE version_id = ? AND BOOK = ? AND chapter = ? AND start_verse >= ? AND start_verse <= ?",
             (
                 "eng-kjv",
-                book,
+                BOOKS[book],
                 int(chapter_split[0]),
                 int(verse_split[0]),
                 int(verse_split[1]),
@@ -126,11 +126,11 @@ class Bible(commands.Cog):
         for verse_num, text in zip(
             range(int(verse_split[0]), int(verse_split[1]) + 1), verses
         ):
-            finalized_text.append(f"[{verse_num}] {text[0]}")
+            finalized_text.append(f"[{verse_num}] {text[0].removeprefix('¶').strip()}")
 
         try:
             await interaction.response.send_message(
-                "> " + "\n> ".join(finalized_text) + f"\n{book} {verse}"
+                "> " + "\n> ".join(finalized_text) + f"\n*{book} {verse}*"
             )
         except errors.CommandInvokeError as err:
             await interaction.response.send_message("There appears to be too much text for me to send at once.")
