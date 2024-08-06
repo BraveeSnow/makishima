@@ -110,54 +110,54 @@ class AnilistResultView(discord.ui.View):
             view=None,
         )
 
-        embed = discord.Embed(
-            title=selected.english if selected.english is not None else selected.romaji,
-            url=f"https://anilist.co/anime/{selected.id}",
-            description=selected.description[:2000],
-            colour=0x3577FF,
-        )
-        embed.set_author(name=selected.native)
-        embed.set_thumbnail(url=selected.cover_image)
-
-        embed.add_field(
-            name="Genres",
-            value=", ".join(selected.genres) if len(selected.genres) > 0 else "N/A",
-            inline=False,
-        )
-        embed.add_field(
-            name="Average Score",
-            value=(
-                f"{selected.score}%" if selected.score is not None else "Not yet rated"
-            ),
-        )
-        embed.add_field(
-            name="Episodes",
-            value=(
-                f"{selected.episodes} ({selected.format})"
-                if selected.episodes is not None and selected.format is not None
-                else "N/A"
-            ),
-        )
-        embed.add_field(
-            name="Season",
-            value=(
-                f"{selected.season} {selected.release}"
-                if selected.season is not None and selected.release is not None
-                else "N/A"
-            ),
-        )
-
-        embed.set_image(url=selected.banner_image)
-        embed.set_footer(text="Provided by AniList")
-
         await interaction.followup.send(
-            embed=embed,
+            embed=AnilistResultView.create_embed(selected),
             view=(
                 AnlistResultActions(selected, self.makishima.db, self.gql_client)
                 if self.makishima.db is not None
                 else discord.utils.MISSING
             ),
         )
+
+    def create_embed(entry: AnilistEntry) -> discord.Embed:
+        embed = discord.Embed(
+            title=entry.english if entry.english is not None else entry.romaji,
+            url=f"https://anilist.co/anime/{entry.id}",
+            description=entry.description[:2000],
+            colour=0x3577FF,
+        )
+        embed.set_author(name=entry.native)
+        embed.set_thumbnail(url=entry.cover_image)
+
+        embed.add_field(
+            name="Genres",
+            value=", ".join(entry.genres) if len(entry.genres) > 0 else "N/A",
+            inline=False,
+        )
+        embed.add_field(
+            name="Average Score",
+            value=(f"{entry.score}%" if entry.score is not None else "Not yet rated"),
+        )
+        embed.add_field(
+            name="Episodes",
+            value=(
+                f"{entry.episodes} ({entry.format})"
+                if entry.episodes is not None and entry.format is not None
+                else "N/A"
+            ),
+        )
+        embed.add_field(
+            name="Season",
+            value=(
+                f"{entry.season} {entry.release}"
+                if entry.season is not None and entry.release is not None
+                else "N/A"
+            ),
+        )
+
+        embed.set_image(url=entry.banner_image)
+        embed.set_footer(text="Provided by AniList")
+        return embed
 
 
 class Anilist(commands.GroupCog):
@@ -172,6 +172,24 @@ class Anilist(commands.GroupCog):
         Searches for the given title on AniList.
         """
         res = await self.anilist.search(title)
+
+        if len(res) == 0:
+            await interaction.response.send_message(
+                "There appears to be nothing related to your query.", ephemeral=True
+            )
+            return
+
+        if len(res) == 1:
+            await interaction.response.send_message(
+                embed=AnilistResultView.create_embed(res[0]),
+                view=(
+                    AnlistResultActions(res[0], self.client.db, self.anilist)
+                    if self.client.db is not None
+                    else discord.utils.MISSING
+                ),
+            )
+            return
+
         await interaction.response.send_message(
             view=AnilistResultView(self.client, self.anilist, res), ephemeral=True
         )
