@@ -5,11 +5,22 @@ from pathlib import Path
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
-intents = discord.Intents.default()
-intents.message_content = True
 
-makishima = commands.Bot("./", intents=intents)
+class MakishimaClient(commands.Bot):
+    def __init__(self):
+        intents = discord.Intents.default()
+        intents.message_content = True
+
+        super().__init__("./", intents=intents)
+
+        self.db = (
+            Session(create_engine(os.getenv("MAKISHIMA_DB")))
+            if "MAKISHIMA_DB" in os.environ
+            else None
+        )
 
 
 async def load_commands(command_path: os.PathLike):
@@ -25,12 +36,16 @@ async def load_commands(command_path: os.PathLike):
 
         # continue with command import
         print(f"Loading commands from {name}")
-        await makishima.load_extension(f"commands.{Path(command_path).name.replace('/', '.')}.{name[:-3]}")
+        await makishima.load_extension(
+            f"commands.{Path(command_path).name.replace('/', '.')}.{name[:-3]}"
+        )
 
-@makishima.event
+
 async def on_ready():
     activity = discord.CustomActivity("Reading classical literature")
-    await makishima.change_presence(activity=activity, status=discord.Status.do_not_disturb)
+    await makishima.change_presence(
+        activity=activity, status=discord.Status.do_not_disturb
+    )
 
     # load commands
     await load_commands(Path("src/commands"))
@@ -44,4 +59,7 @@ async def on_ready():
 
 if __name__ == "__main__":
     load_dotenv()
+
+    makishima = MakishimaClient()
+    makishima.add_listener(on_ready)
     makishima.run(os.environ["MAKISHIMA_TOKEN"])

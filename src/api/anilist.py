@@ -2,8 +2,10 @@ import re
 from typing import Any, Dict, List
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
+from gql.transport.exceptions import TransportQueryError
 
-_ANILIST_TRANSPORT = AIOHTTPTransport(url="https://graphql.anilist.co/")
+_ANILIST_GQL_URL = "https://graphql.anilist.co/"
+_ANILIST_TRANSPORT = AIOHTTPTransport(url=_ANILIST_GQL_URL)
 
 _ANILIST_SEARCH_QUERY = gql(
     """
@@ -33,6 +35,40 @@ _ANILIST_SEARCH_QUERY = gql(
 				}
 	        }
 	    }
+    }
+    """
+)
+
+_ANILIST_MEDIA_LIST_QUERY = gql(
+    """
+    query ($id: Int) {
+        Media (id: $id, onList: true) {
+            id
+        }
+    }
+    """
+)
+
+_ANILIST_ANIME_LIKE_MUTATION = gql(
+    """
+    mutation ($id: Int) {
+        ToggleFavourite (animeId: $id) {
+            anime {
+                nodes {
+                    id
+                }
+            }
+        }
+    }
+    """
+)
+
+_ANILIST_WATCH_LATER_MUTATION = gql(
+    """
+    mutation ($id: Int) {
+        SaveMediaListEntry (mediaId: $id, status: PLANNING) {
+            id
+        }
     }
     """
 )
@@ -97,3 +133,34 @@ class AnilistGraphQLClient:
             _ANILIST_SEARCH_QUERY, variable_values={"title": title}
         )
         return clean_anilist_entries(entries)
+
+    async def is_in_list(self, anime_id: int, anilist_token: str) -> bool:
+        try:
+            await self._build_auth_client(anilist_token).execute_async(_ANILIST_MEDIA_LIST_QUERY, {"id": anime_id})
+            return True
+        except TransportQueryError:
+            # this is expected behavior when no entry is found
+            return False
+
+    async def favorite(self, anime_id: int, anilist_token: str) -> bool:
+        auth_client = self._build_auth_client(anilist_token)
+        favorites = [
+            d["id"]
+            for d in (
+                await auth_client.execute_async(
+                    _ANILIST_ANIME_LIKE_MUTATION, variable_values={"id": anime_id}
+                )
+            )["ToggleFavourite"]["anime"]["nodes"]
+        ]
+        return anime_id in favorites
+
+    async def add_to_watch_later(self, anime_id: int, anilist_token: str):
+        auth_client = self._build_auth_client(anilist_token)
+        await auth_client.execute_async(_ANILIST_WATCH_LATER_MUTATION, {"id": anime_id})
+
+    def _build_auth_client(self, auth_token: str) -> Client:
+        return Client(
+            transport=AIOHTTPTransport(
+                _ANILIST_GQL_URL, {"Authorization": f"Bearer {auth_token}"}
+            )
+        )

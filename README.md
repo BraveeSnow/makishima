@@ -25,6 +25,8 @@ file.
 - `MAKISHIMA_TOKEN`
     - The Discord bot token that can be retrieved in the Discord developer
       portal.
+- `MAKISHIMA_DB`
+    - The database housing information required for certain commands.
 - `BIBLE_DB`
     - The sqlite database URL to be used for the bible command group.
 
