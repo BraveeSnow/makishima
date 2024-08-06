@@ -24,7 +24,7 @@ _ANILIST_SEARCH_QUERY = gql(
                 seasonYear
                 episodes
                 coverImage {
-                    medium
+                    extraLarge
                 }
                 bannerImage
                 genres
@@ -103,7 +103,7 @@ class AnilistEntry:
         self.episodes: int | None = (
             int(float(media["episodes"])) if media["episodes"] is not None else None
         )
-        self.cover_image: str = media["coverImage"]["medium"]
+        self.cover_image: str = media["coverImage"]["extraLarge"]
         self.banner_image: str = media["bannerImage"]
         self.genres: List[str] = media["genres"]
         self.score: int | None = (
