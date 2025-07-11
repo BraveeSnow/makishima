@@ -1,0 +1,8 @@
+# package manager
+node_modules/
+
+# build artifacts
+dist/
+
+# sensitive info
+.env.keys
